@@ -1,2 +1,2 @@
 # NTNU
-Anything realted to PhD at NTNU
+Anything related to PhD at NTNU
