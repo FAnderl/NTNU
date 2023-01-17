@@ -13,19 +13,19 @@ function dstat_vars_dt = SM_XIP_DPS_XTENDED(t, stat_vars,XIP_ext  ...
 
         % XIP_int
         dstat_vars_dt(1,1) = - Df *  deval(n_sol,t) * (stat_vars(1)/(deval(n_sol,t)*v) - stat_vars(6)) - delta_XIP_int*stat_vars(1)...
-                - 1/(deval(n_sol,t)*v)  * k_TF_m * (stat_vars(1) * stat_vars(2))^dim_stoch_exp + k_TF_f* stat_vars(3); 
+                -   k_TF_m * (1/(deval(n_sol,t)*v) *stat_vars(1) * stat_vars(2))^dim_stoch_exp + k_TF_f* stat_vars(3); 
    
 
         % Free comR
         dstat_vars_dt(2,1) =  deval(n_sol,t) * alpha_comR * kappaB  + k_TF_f* stat_vars(3)  - ...
-                              1/(deval(n_sol,t)*v)  * k_TF_m * (stat_vars(1) * stat_vars(2))^dim_stoch_exp - ...
+                               k_TF_m * (1/(deval(n_sol,t)*v) *stat_vars(1) * stat_vars(2))^dim_stoch_exp - ...
                               delta_tf * stat_vars(2)   + ...
                               deval(n_sol,t) * alpha_comR * kappaX * (((stat_vars(5))/(deval(n_sol,t)*v))/ (k_SigX+((stat_vars(5))/(deval(n_sol,t)*v))));   % SigX induced gene expression
         
         
         
         % Mature comR (XIP-comR Complex) aka Activated Response Regulator
-        dstat_vars_dt(3,1) =  1/(deval(n_sol,t)*v)  * 1/2 * k_TF_m * (stat_vars(1) * stat_vars(2))^dim_stoch_exp - ...
+        dstat_vars_dt(3,1) =   1/2 * k_TF_m * (1/(deval(n_sol,t)*v) *stat_vars(1) * stat_vars(2))^dim_stoch_exp - ...
                               k_TF_f* stat_vars(3) - delta_mtf* stat_vars(3); 
         
         
@@ -53,7 +53,9 @@ function dstat_vars_dt = SM_XIP_DPS_XTENDED(t, stat_vars,XIP_ext  ...
 
 
 
-
+if(any(stat_vars<0) )
+    warning("Solution is Negative");
+end
 
         
 

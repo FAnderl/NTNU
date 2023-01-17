@@ -22,7 +22,7 @@ delta_tf = 0.01;              % Transcription Factor Degradation Rate
 k_TF_f = 1e-3;                % Transcription Factor Dematuration Rate    -> Likely a very small numerical value
 delta_mtf = 0.01;             % Mature Transcription Factor Degradation Rate
 alpha_comR = 1;               % Translation Efficieny of sigX mRNA to ComR
-kappaB = 0.0001;                % Basal RNA synthesis rate
+kappaB = 0.01;                % Basal RNA synthesis rate
 kappa_comR =  9.575;
 k_comR = 1.807;
 alpha_sigX = 1;               % SigX Translation Efficiency
@@ -51,7 +51,7 @@ b = 1;
 
 % Further Luminescence-related parameters
 eta = 0.98;                     % Quantum Efficiency
-RLUconst = 0.01;                % RLU constant
+RLUconst = 1e-5;                % RLU constant
 
 N_Avo = 6.022e23;
 
@@ -318,6 +318,11 @@ model_updated = setinit(model_updated, 'Name', cell__name_arr);
 
 % Define ODE Solver for GreyBox Model
 model_updated.SimulationOptions.Solver = 'ode15s';
+
+
+% Non-Negative Options for ODE Solver
+
+
 
 
 if ~RED_SYS_FLAG    % Including mRNA 
@@ -617,6 +622,12 @@ end
 
 
 
+
+
+
+%% Estimation
+try
+
 % Define Estimator Options
 opt = nlgreyestOptions;
 opt.Display = 'on';
@@ -624,12 +635,6 @@ opt.SearchOptions.Advanced.UseParallel = true;
 opt.SearchMethod = 'fmincon';
 opt.SearchOptions.Algorithm = 'active-set';   % sqp, trust-region-reflective,interior-point                                    
 %opt.SearchOptions.Advanced.FinDiffRelStep = 1e-1;    
-
-
-%% Estimation
-try
-
-
 
 % Perform NL Parameter Estimation
 estm_model = nlgreyest(y_data,model_updated,opt);

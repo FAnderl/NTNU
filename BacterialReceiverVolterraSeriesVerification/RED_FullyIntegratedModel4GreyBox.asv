@@ -20,7 +20,7 @@ function [dx,y] = RED_FullyIntegratedModel4GreyBox(t,x,u,  ...
 try
 
 
-dim_stoch_exp = 2.5;
+dim_stoch_exp = 2;
 
 
 % Use Globally stored bacterial model
@@ -46,8 +46,8 @@ bac_gro_at_t = EvalBacGrowth(t,bac_gro_mode,n_sol);
 
 x0 = x(1:6);
 
-% Force Non-Negative Solution
-x0(x0 <0) = 0;
+
+
 
 
 % XIP_int
@@ -101,6 +101,8 @@ I_ph = eta * x0(4);
 
 RLU = (RLUconst) * I_ph;
 
+disp(x0)
+
 y = RLU;
 
 if (~isreal(y) || isnan(y) || isinf(y)) || ((sum(isnan(dx))>0) || (sum(isinf(dx))>0))
@@ -108,10 +110,8 @@ if (~isreal(y) || isnan(y) || isinf(y)) || ((sum(isnan(dx))>0) || (sum(isinf(dx)
     warning("Y is Nan or Inf or Complex")
 end
 
-if( any(x0 < 0 ))
-    warning("ODE Solution is negative");
-    disp(x0);
-end
+
+
 
 catch MExc
 

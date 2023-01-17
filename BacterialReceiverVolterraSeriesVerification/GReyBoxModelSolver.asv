@@ -51,7 +51,7 @@ b = 1;
 
 % Further Luminescence-related parameters
 eta = 0.98;                     % Quantum Efficiency
-RLUconst = 0.01;                % RLU constant
+RLUconst = 1e-6;                % RLU constant
 
 N_Avo = 6.022e23;
 
@@ -318,6 +318,11 @@ model_updated = setinit(model_updated, 'Name', cell__name_arr);
 
 % Define ODE Solver for GreyBox Model
 model_updated.SimulationOptions.Solver = 'ode15s';
+
+
+% Non-Negative Options for ODE Solver
+
+
 
 
 if ~RED_SYS_FLAG    % Including mRNA 

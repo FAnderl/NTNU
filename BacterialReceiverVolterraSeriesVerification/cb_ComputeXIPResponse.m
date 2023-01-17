@@ -71,11 +71,12 @@ n_init = 0.016  * (1/od600_coeff);      % Initial Bacterial Cell Count DEFAULT:0
 n = n_init;                     % Population Size; remnant albeit necessary 
 
 
+
 % Steady-State comR-concentration (due to basal production)
 comR_tilde = (n*alpha_comR*kappaB)/delta_tf;
 
 % Imposed ZERO initital condition on comR concentration 
-%comR_tilde = 0;
+comR_tilde = 0;
 
 N_Avo = 6.022e23;
 
