@@ -1,0 +1,20 @@
+function dstat_vars_dt = SMLuxLuminscence(t1, stat_vars1, t,...
+    betaE, deltaEp, ks, kp, s_zero, mRNA )
+
+    %interp_mRNA = interp1(t,mRNA,t1);
+    interp_mRNA_dummy = deval(mRNA,t1);
+    interp_mRNA 
+
+    % EL  
+    dstat_vars_dt(1,1) = betaE * interp_mRNA; 
+    
+    
+    % EP 
+    dstat_vars_dt(2,1) = betaE * interp_mRNA- deltaEp * stat_vars1(2); 
+    
+    
+    % P : Product (Fatty Acid)
+    dstat_vars_dt(3,1)  = ks * s_zero * stat_vars1(1) - (ks * stat_vars1(1) + ...
+        kp * stat_vars1(2)) * stat_vars1(3);
+
+end
