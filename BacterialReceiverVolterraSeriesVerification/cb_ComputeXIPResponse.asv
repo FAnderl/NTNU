@@ -1,4 +1,4 @@
-function [out] = cb_ComputeXIPResponse(app,...
+function cb_ComputeXIPResponse(app,...
 qD,...
 delta_XIP ,...
 k_TF_m ,...
@@ -14,9 +14,13 @@ kappaX ,...
 k_SigX ,...
 deltaSigX ,...
 deltaR ,...
-kL ,...
+alpha_L ,...
 deltaEL, ...
 XIP_input)
+
+XTENDED_MODEL_FLAG = 1;   % USE MODEL CONSIDERING STOCHIOMETRY OF DIMERIZATION (1)
+
+
 %cb_ComputeXIPResponse Computes the response of the XIP system with
 %parameters set in parent app
 %   Detailed explanation goes here
@@ -42,7 +46,7 @@ XIP_input)
 % kL = 0.05;                       % kEl: Luciferase Translation Rate
 % deltaEL = 0.00385;               % Luciferase Decay Rate Constant 
 
-v = 1;                          % Bacteria Volume ~1e-15l or 1um^3
+v = 1;                             % Bacteria Volume ~1e-15l or 1um^3
 
 % Fitted Parameters for Bacterial Growth @ 62.6nM
 % mu: 0.0082041
@@ -66,10 +70,12 @@ n_init = 0.016  * (1/od600_coeff);      % Initial Bacterial Cell Count DEFAULT:0
 
 n = n_init;                     % Population Size; remnant albeit necessary 
 
-
+bac_gro_at_t = EvalBacGrowth(0,1,n_sol);
 
 % Steady-State comR-concentration (due to basal production)
 comR_tilde = (n*alpha_comR*kappaB)/delta_tf;
+
+% Imposed ZERO initital condition on comR concentration 
 comR_tilde = 0;
 
 N_Avo = 6.022e23;
@@ -80,11 +86,32 @@ dim_stoch_exp = 2.5;
 
 % Extracellular XIP - Driving CONCENTRATION
 XIP_Sig_Num = 60;  % 100nM, i.e., ~60 molecules per bacterial cell volume
-XIP_Sig_Num = XIP_input*(1e-9*N_Avo*1e-15);
+XIP_Sig_Num = XIP_input*(1e-9*N_Avo*1e-15);  % Overwritten by external parameter
 
 %% Model for Gene Expression
 
 
+% Incorporating Bacterial Growth
+
+
+
+
+global n_sol_glob bac_gro_mode n_vec t_vec
+
+
+%  Use Experimental Bacterial Growth Curves for Estimation (Note: Copied from )
+load("bac_growth_data.mat");
+n_vec = (1/od600_coeff) .* data_set;
+t_vec = time_vec;
+% Select which data to use for estimation (Single Experiment Set-Up)
+data_idx = 19;
+% Cut corresponding slice from bacterial_growth experimental data
+n_vec = n_vec(:,data_idx);
+
+
+
+% Setting Bacterial Growth Mode (1: Use empirical data; 0: Use Bacterial Growth Model)
+bac_gro_mode = 1;
 
 
 
@@ -123,7 +150,8 @@ XIP_ext =@(t) XIP_Sig_Num*heaviside(t) - XIP_Sig_Num*heaviside(t-2);
 %     RNA
 % ]; 
 
-SIMPLIFY_FLAG = 0; 
+% Model with(0) or without(1) mRNA
+SIMPLIFY_FLAG = 1; 
 
 % Dynamic Bacterial Growth Model  
 DPS_FLAG = 1;
@@ -135,8 +163,9 @@ if SIMPLIFY_FLAG
               comR_tilde;
               0.0;
               0.0;
+              0.0;
               XIP_Sig_Num;
-              0];
+              ];
 
 elseif ~SIMPLIFY_FLAG
     MODEL_SZ = 7;
@@ -152,13 +181,12 @@ end
 
 
 
-
 dn_dt = zeros(1,1);
 
 % Additional Scaling Parameters for Bacterial Growth
 a =  1;
 b =  1;
-tau = 83.3785;%80.5504;
+tau = 83.3785;% 80.5504;
 n_init_DDE  = n_init;
 
 % Solve for Bacterial Growth
@@ -168,7 +196,7 @@ n_init_DDE  = n_init;
 % Solve Delay Differential Equation for Heuristic Fit 
 sol = dde23(@(t,n_t,Z) BacGrowthDelayDE(t, n_t, Z, mu0,Kn, a,b),...
         tau,@(t) BacHist(t,mu0,n_init_DDE),[0, 900]);
-
+n_sol_glob = sol;
 
 % figure(1);
 % plot(app.UIAxes,sol.x,sol.y,'-o', 'LineWidth',3.0,'Color','m')
@@ -181,7 +209,7 @@ if DPS_FLAG
   XIP_model = @SM_XIP_DPS;
 
 if XTENDED_MODEL_FLAG 
-    XIP_model = @SM_XIP_DPS_updated;
+    XIP_model = @SM_XIP_DPS_XTENDED;
 end
 
   n = sol; % n_sol
@@ -198,23 +226,18 @@ end
 dstat_vars_dt= zeros(MODEL_SZ,1);
 
 
-[t,stat_vars] = ode15s(@(t,stat_vars) SM_XIP_DPS_updated(t, stat_vars,XIP_ext  ...
+
+[t,stat_vars] = ode15s(@(t,stat_vars) XIP_model(t, stat_vars,XIP_ext  ...
     ,qD, delta_XIP_int, delta_XIP_ext ,k_TF_m  ...
     ,k_TF_f ,delta_tf ,delta_mtf ,alpha_comR ,alpha_sigX,kappaB ,kappa_comR ,k_comR ... 
-    ,deltaR, kappaX, k_SigX,deltaSigX,n ,v, Ve, kL, deltaEL, dim_stoch_exp)... 
+    ,deltaR, kappaX, k_SigX,deltaSigX,n ,v, Ve, deltaEL, alpha_L,dim_stoch_exp)... 
     , tspan, init_cond, options);
 
-% [t,stat_vars] = ode15s(@(t,stat_vars) XIP_model(t, stat_vars,XIP_ext  ...
-%     ,qD, delta_XIP_int, delta_XIP_ext ,k_TF_m  ...
-%     ,k_TF_f ,delta_tf ,delta_mtf ,alpha_comR ,alpha_sigX,kappaB ,kappa_comR ,k_comR ... 
-%     ,deltaR, kappaX, k_SigX,deltaSigX,n ,v, Ve, kL, deltaEL)... 
-%     , tspan, init_cond, options);
 
 
 
-
-varNameStrings = ["Internal XIP","Free comR" ,"Mature TF comR", "mRNA", "SigX", "External XIP", "Luciferase"];
-lgd_strings = ["XIP_{int}","comR","comR-XIP", "mRNA", "SigX", "XIP_{ext}", "E_L"];
+varNameStrings = ["Internal XIP","Free comR" ,"Mature TF comR", "Luciferase", "SigX", "External XIP", "(mRNA)"];
+lgd_strings = ["XIP_{int}","comR","comR-XIP", "Luciferase", "SigX", "XIP_{ext}", "(mRNA)"];
 color_strings = ["r","b","g","k", "c", "m", "r"];
 
 
@@ -225,10 +248,10 @@ axesLst = [
            app.XIP_intUIAxes,
            app.comRUIAxes,
            app.comR_XIPUIAxes,
-           app.mRNAUIAxes,
+           app.LuciferaseUIAxes,
            app.SigXUIAxes,
            app.XIP_extUIAxes,
-           app.LuciferaseUIAxes];
+           app.mRNAUIAxes];
 for i = 1:1:size_stat_vec(2)
     %subplot(2,4,i)
     plot(axesLst(i),t,stat_vars(:,i), strcat("-x",color_strings(i), ""));

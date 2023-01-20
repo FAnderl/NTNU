@@ -21,7 +21,7 @@ k_TF_m = 0.0091;              % Transcription Factor Synthesis Rate
 delta_tf = 0.01;              % Transcription Factor Degradation Rate
 k_TF_f = 1e-3;                % Transcription Factor Dematuration Rate    -> Likely a very small numerical value
 delta_mtf = 0.01;             % Mature Transcription Factor Degradation Rate
-alpha_comR = 1;               % Translation Efficieny of sigX mRNA to ComR
+alpha_comR = 1;          % Translation Efficieny of sigX mRNA to ComR
 kappaB = 0.01;                % Basal RNA synthesis rate
 kappa_comR =  9.575;
 k_comR = 1.807;
@@ -42,21 +42,22 @@ n_init = 0.016 * (1/od600_coeff);      % Initial Bacterial Cell Count
 n = n_init;                   % Population Size; remnant albeit necessary
 betaE = 0.05;                 % kEl
 deltaEL = 0.015;
-alpha_L = 1;
-
+alpha_L = 1.0;
+dim_stoch_exp = 2.5;
 
 % Scaling Parameters for Bacterial Population
 a = 1;
 b = 1;
 
 % Further Luminescence-related parameters
-eta = 0.98;                     % Quantum Efficiency
+eta = 1;                     % Quantum Efficiency
 RLUconst = 1e-5;                % RLU constant
 
 N_Avo = 6.022e23;
 
 n_init_DDE  = n;
 
+clear global 
 global n_sol_glob bac_gro_mode n_vec t_vec
 % Solve for Bacterial Growth and store globally
 n_sol_glob = dde23(@(tb,n_t,Z) BacGrowthDelayDE(tb, n_t, Z, mu0,Kn, a,b),...
@@ -75,8 +76,21 @@ t_vec = time_vec;
 bac_gro_mode = 1;
 
 
+% TEST: Overwrite n with value from experimental growth curve 
+
+% n = EvalBacGrowth(15,1,{t_vec, n_vec});
+% 
+% % Makeshift
+% clear global n_vec
+% global n_vec
+% n_vec = (1/od600_coeff) .* data_set;
+
+
+% Move comR_tilde back to where it was before 
 % Steady-State comR-concentration (due to basal production)
 comR_tilde = (n*alpha_comR*kappaB)/delta_tf;
+
+%comR_tilde = 0;
 
 
 % Load Experimental WetLab Data for Model Specifications
@@ -181,7 +195,6 @@ inv_data = data_set(:,data_idx);
 
 
 % Create data_object that contains ALL experimental data
-
 
 
 sampling_times = linspace(0,data_duration_min,(size(inv_data,1)));
@@ -306,6 +319,11 @@ elseif RED_SYS_FLAG
     model_updated = idnlgrey('RED_FullyIntegratedModel4GreyBox',model_order, params.', init_states, 0,'TimeUnit','minute');
 end 
 
+% Add FileArguments, i.e. additional auxiliary parameters to the NLGreyBox
+% Model
+% dim_stoch_exp 
+% force_non_neg (true/false)
+model_updated.FileArgument = {dim_stoch_exp, true};
 
 
 if ~RED_SYS_FLAG
@@ -318,9 +336,9 @@ model_updated = setinit(model_updated, 'Name', cell__name_arr);
 
 % Define ODE Solver for GreyBox Model
 model_updated.SimulationOptions.Solver = 'ode15s';
+model_updated.SimulationOptions.RelTol= 1e-3;
+%model_updated.SimulationOptions.MaxStep = 0.1;
 
-
-% Non-Negative Options for ODE Solver
 
 
 
@@ -586,6 +604,10 @@ get(model_updated)
 
 %% Pre Estimation Simulation
 % Simulate Model
+clear global res_arr
+global res_arr
+res_arr = [-1 0 0 0 0 0 0];
+
 preEstm_model_pred = sim(model_updated,y_data);
 preEstm_model_pred_data = preEstm_model_pred.OutputData;
 
@@ -611,8 +633,6 @@ elseif size(preEstm_model_pred_data,2) == 1
     plot(sampling_times, inv_data, "o");
     hold on
     plot(sampling_times(2:end), preEstm_model_pred_data);
-
-
 end
 
 % TODO: Implement Pre-Estimation Fit Plot for Single Experiment Set-Up
@@ -620,9 +640,15 @@ end
 
 
 
+% Cut Init Row 
+res_arr = res_arr(2:end,:);
 
 
-
+% Plot values 
+for i = 2: size(res_arr,2)
+    figure; plot(res_arr(:,1), res_arr(:,i))
+    title(num2str(i));
+end
 
 
 %% Estimation

@@ -19,8 +19,7 @@ function [dx,y] = FullyIntegratedModel4GreyBox(t,x,u,  ...
 
 try
 
-
-dim_stoch_exp = 2.5;    % Parameter defined internally without handle to make adjustable/fittable (maybe change that in the long term) 
+dim_stoch_exp = varargin{1}{1};    % Parameter defined internally without handle to make adjustable/fittable (maybe change that in the long term) 
 
 % Use Globally stored bacterial model
 global n_sol_glob bac_gro_mode t_vec n_vec

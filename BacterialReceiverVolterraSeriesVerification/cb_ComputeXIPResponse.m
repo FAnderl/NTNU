@@ -16,6 +16,7 @@ deltaSigX ,...
 deltaR ,...
 alpha_L ,...
 deltaEL, ...
+comR_tilde,...
 XIP_input)
 
 XTENDED_MODEL_FLAG = 1;   % USE MODEL CONSIDERING STOCHIOMETRY OF DIMERIZATION (1)
@@ -46,7 +47,7 @@ XTENDED_MODEL_FLAG = 1;   % USE MODEL CONSIDERING STOCHIOMETRY OF DIMERIZATION (
 % kL = 0.05;                       % kEl: Luciferase Translation Rate
 % deltaEL = 0.00385;               % Luciferase Decay Rate Constant 
 
-v = 1;                          % Bacteria Volume ~1e-15l or 1um^3
+v = 1;                             % Bacteria Volume ~1e-15l or 1um^3
 
 % Fitted Parameters for Bacterial Growth @ 62.6nM
 % mu: 0.0082041
@@ -71,12 +72,14 @@ n_init = 0.016  * (1/od600_coeff);      % Initial Bacterial Cell Count DEFAULT:0
 n = n_init;                     % Population Size; remnant albeit necessary 
 
 
-
 % Steady-State comR-concentration (due to basal production)
-comR_tilde = (n*alpha_comR*kappaB)/delta_tf;
+%comR_tilde = (n*alpha_comR*kappaB)/delta_tf;
 
 % Imposed ZERO initital condition on comR concentration 
-comR_tilde = 0;
+%comR_tilde = 0;
+
+
+% comR_tilde overwritten from App GUI
 
 N_Avo = 6.022e23;
 
@@ -91,6 +94,27 @@ XIP_Sig_Num = XIP_input*(1e-9*N_Avo*1e-15);  % Overwritten by external parameter
 %% Model for Gene Expression
 
 
+% Incorporating Bacterial Growth
+
+
+
+
+global n_sol_glob bac_gro_mode n_vec t_vec
+
+
+%  Use Experimental Bacterial Growth Curves for Estimation (Note: Copied from )
+load("bac_growth_data.mat");
+n_vec = (1/od600_coeff) .* data_set;
+t_vec = time_vec;
+% Select which data to use for estimation (Single Experiment Set-Up)
+data_idx = 19;
+% Cut corresponding slice from bacterial_growth experimental data
+n_vec = n_vec(:,data_idx);
+
+
+
+% Setting Bacterial Growth Mode (1: Use empirical data; 0: Use Bacterial Growth Model)
+bac_gro_mode = 1;
 
 
 
@@ -165,7 +189,7 @@ dn_dt = zeros(1,1);
 % Additional Scaling Parameters for Bacterial Growth
 a =  1;
 b =  1;
-tau = 83.3785;%80.5504;
+tau = 83.3785;% 80.5504;
 n_init_DDE  = n_init;
 
 % Solve for Bacterial Growth
@@ -175,7 +199,7 @@ n_init_DDE  = n_init;
 % Solve Delay Differential Equation for Heuristic Fit 
 sol = dde23(@(t,n_t,Z) BacGrowthDelayDE(t, n_t, Z, mu0,Kn, a,b),...
         tau,@(t) BacHist(t,mu0,n_init_DDE),[0, 900]);
-
+n_sol_glob = sol;
 
 % figure(1);
 % plot(app.UIAxes,sol.x,sol.y,'-o', 'LineWidth',3.0,'Color','m')

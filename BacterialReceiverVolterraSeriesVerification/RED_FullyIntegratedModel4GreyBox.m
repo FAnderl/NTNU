@@ -17,10 +17,17 @@ function [dx,y] = RED_FullyIntegratedModel4GreyBox(t,x,u,  ...
 % NB! System does not have a classical input in the traditional sense
 % 
 
+
+global res_arr
+
 try
 
 
-dim_stoch_exp = 2.5;
+dim_stoch_exp = varargin{1}{1};
+
+
+force_non_neg =  varargin{1}{2};     % true / false
+
 
 
 % Use Globally stored bacterial model
@@ -43,12 +50,17 @@ end
 % Compute Bacterial Population size at t
 bac_gro_at_t = EvalBacGrowth(t,bac_gro_mode,n_sol);
 
-
 x0 = x(1:6);
 
-% Force Non-Negative Solution
-x0(x0 <0) = 0;
+% Debug
+% disp("t:" + num2str(t));
+%disp("x0:");
+%disp(x0); 
 
+% Force Non-Negative Solution
+if force_non_neg
+    x0(x0 < 0) = 0;
+end
 
 % XIP_int
 dx0(1,1) = - (Df*1e6) *  bac_gro_at_t * (x0(1)/(bac_gro_at_t*v) - x0(6)) - delta_XIP_int*x0(1)...
@@ -95,6 +107,18 @@ dx0(6,1) = (Df*1e6) *  bac_gro_at_t * 1/(Ve*1e12) * (x0(1)/(bac_gro_at_t*v) -  x
 %         - deltaR * x0(7); 
 
 
+
+
+try 
+    if ~ismember(t, res_arr(:,1))
+        res_arr = [res_arr ; t x0(1) x0(2) x0(3) x0(4) x0(5) x0(6)];
+    end
+catch MExc
+
+warning("OOps..Something went wrong");
+
+end
+
 dx = dx0;
 
 I_ph = eta * x0(4);
@@ -102,6 +126,7 @@ I_ph = eta * x0(4);
 RLU = (RLUconst) * I_ph;
 
 y = RLU;
+
 
 if (~isreal(y) || isnan(y) || isinf(y)) || ((sum(isnan(dx))>0) || (sum(isinf(dx))>0))
 

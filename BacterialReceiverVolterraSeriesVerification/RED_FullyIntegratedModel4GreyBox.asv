@@ -20,7 +20,7 @@ function [dx,y] = RED_FullyIntegratedModel4GreyBox(t,x,u,  ...
 try
 
 
-dim_stoch_exp = 2;
+dim_stoch_exp = varargin{1}{1};
 
 
 % Use Globally stored bacterial model
@@ -43,20 +43,22 @@ end
 % Compute Bacterial Population size at t
 bac_gro_at_t = EvalBacGrowth(t,bac_gro_mode,n_sol);
 
-
+disp("t:" + num2str(t));
 x0 = x(1:6);
+%disp("x0:");
+%disp(x0); d  s
 
-
-
+% Force Non-Negative Solution
+%x0(x0 < 0) = 0;
 
 
 % XIP_int
 dx0(1,1) = - (Df*1e6) *  bac_gro_at_t * (x0(1)/(bac_gro_at_t*v) - x0(6)) - delta_XIP_int*x0(1)...
-        -  k_TF_m * (1/(bac_gro_at_t*v) *x0(1) * x0(2))^dim_stoch_exp + k_TF_f* x0(3); 
+        -  k_TF_m * (1/(bac_gro_at_t*v) *x0(1) * x0(2))^dim_stoch_exp + 2*k_TF_f* x0(3); 
 
 
 % Free comR
-dx0(2,1) =  bac_gro_at_t * alpha_comR * kappaB  + k_TF_f* x0(3)  - ...
+dx0(2,1) =  bac_gro_at_t * alpha_comR * kappaB  + 2*k_TF_f* x0(3)  - ...
                       k_TF_m * (1/(bac_gro_at_t*v) *x0(1) * x0(2))^dim_stoch_exp - ...
                       delta_tf * x0(2)   + ...
                       bac_gro_at_t * alpha_comR * kappaX * (((x0(5))/(bac_gro_at_t*v))/ (k_SigX+((x0(5))/(bac_gro_at_t*v))));   % SigX induced gene expression
@@ -101,17 +103,18 @@ I_ph = eta * x0(4);
 
 RLU = (RLUconst) * I_ph;
 
-disp(x0)
-
 y = RLU;
+
 
 if (~isreal(y) || isnan(y) || isinf(y)) || ((sum(isnan(dx))>0) || (sum(isinf(dx))>0))
 
     warning("Y is Nan or Inf or Complex")
 end
 
-
-
+if( any(x0 < 0 ))
+    warning("ODE Solution is negative");
+    disp(x0);
+end
 
 catch MExc
 
