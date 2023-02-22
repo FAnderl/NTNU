@@ -1,0 +1,38 @@
+% Fit XIP-affected bacterial growth constants to logarithmic decay model
+
+XIP = [3.9000000
+7.8000000
+15.6250000
+31.2500000
+62.5000000
+125.0000000
+250.0000000
+500.0000000
+1000.0000000
+2000.0000000];
+
+mu = [0.01155300000
+0.01128800000
+0.01039000000
+0.01008500000
+0.00855550000
+0.00654730000
+0.00484560000
+0.00320360000
+0.00296320000
+0.00206420000];
+
+
+tbl = table(log(XIP), mu, 'VariableNames',{'XIP', 'mu'});
+
+figure(1),scatter(XIP, mu);
+figure(2),scatter(log(XIP), mu);
+hold on 
+
+mdl = fit(log(XIP),mu, 'poly1')
+figure(2);plot(mdl);
+
+coeffs = coeffvalues(mdl);
+
+
+figure(1), plot(coeffs(1)*log(XIP)+coe)

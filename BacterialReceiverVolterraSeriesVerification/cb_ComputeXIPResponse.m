@@ -56,24 +56,24 @@ v = 1;                             % Bacteria Volume ~1e-15l or 1um^3
 % b: 1
 % tau: 83.3785
 
-mu0 = 0.0082041;%0.0090222;                % Bacterial Growth Constant           
-Kn = .6964;%7.5602;                    % 1e8 (SCALE)  % Carrying Capacity (for bacterial gorowth function)
+mu0 = 0.0082041;%0.0090222;             % Bacterial Growth Constant           
+Kn = .6964;%7.5602;                     % 1e8 (SCALE)  % Carrying Capacity (for bacterial gorowth function)
 
 od600_coeff = 1.64e-9;
 
-Ve = 2.2e11;                    % UNITS [um^3] Extracellular Volume; arbitrary 10ml; TODO  -> How to handle this?
+Ve = 2.2e11;                            % UNITS [um^3] Extracellular Volume; arbitrary 10ml; TODO  -> How to handle this?
 
-tEnd = 900;                     % Time Scale of Experiment
+tEnd = 900;                             % Time Scale of Experiment
 
 
 n_init = 0.016  * (1/od600_coeff);      % Initial Bacterial Cell Count DEFAULT:0.016 
-%n_init = 1;                    % Initial Bacterial Cell Count
+%n_init = 1;                            % Initial Bacterial Cell Count
 
-n = n_init;                     % Population Size; remnant albeit necessary 
+n = n_init;                             % Population Size; remnant albeit necessary 
 
 
 % Steady-State comR-concentration (due to basal production)
-%comR_tilde = (n*alpha_comR*kappaB)/delta_tf;
+comR_tilde = (n*alpha_comR*kappaB)/delta_tf;
 
 % Imposed ZERO initital condition on comR concentration 
 %comR_tilde = 0;

@@ -14,20 +14,20 @@ RED_SYS_FLAG = 1;
 % Parameter Declaration & Definition - TODO: Implement "Load Parameters from CSV-file"
 
 
-Df = 1e-6;                    % *1e6 ; Facilitated active diffusion transfer rate; ALTERNATIVELY: 0.54288 VS. 0.0236
-delta_XIP_int = 0.07;         % Internal XIP Degradation Rate
-delta_XIP_ext = 0.07;         % External XIP Degradation Rate
-k_TF_m = 0.0091;              % Transcription Factor Synthesis Rate
-delta_tf = 0.01;              % Transcription Factor Degradation Rate
-k_TF_f = 1e-3;                % Transcription Factor Dematuration Rate    -> Likely a very small numerical value
-delta_mtf = 0.01;             % Mature Transcription Factor Degradation Rate
-alpha_comR = 1;          % Translation Efficieny of sigX mRNA to ComR
-kappaB = 0.01;                % Basal RNA synthesis rate
-kappa_comR =  9.575;
-k_comR = 1.807;
+Df = 1e-7;                    % *1e6 ; Facilitated active diffusion transfer rate; ALTERNATIVELY: 0.54288 VS. 0.0236
+delta_XIP_int = 0.016;        % Internal XIP Degradation Rate
+delta_XIP_ext = 0.016;        % External XIP Degradation Rate
+k_TF_m = 1e-10;               % Transcription Factor Synthesis Rate
+delta_tf = 0.001;             % Transcription Factor Degradation Rate
+k_TF_f = 0.001;               % Transcription Factor Dematuration Rate    -> Likely a very small numerical value
+delta_mtf = 0.05;             % Mature Transcription Factor Degradation Rate
+alpha_comR = 1;               % Translation Efficieny of sigX mRNA to ComR
+kappaB = 0.1;                 % Basal RNA synthesis rate
+kappa_comR =  0.8;
+k_comR = 6;
 alpha_sigX = 1;               % SigX Translation Efficiency
-kappaX = 1.807;               % Maximum SigX induced Transcription Rate
-k_SigX = 27.09;
+kappaX = 3.4;                 % Maximum SigX induced Transcription Rate
+k_SigX = 60;
 deltaSigX = 0.2;
 deltaR = 0.00152;             % mRNA Degradation Rate
 v = 1;                        % Bacteria Volume ~1e-15l or 1um^3
@@ -41,7 +41,7 @@ n_init = 0.016 * (1/od600_coeff);      % Initial Bacterial Cell Count
 %n_init = 1;                  % Initial Bacterial Cell Count
 n = n_init;                   % Population Size; remnant albeit necessary
 betaE = 0.05;                 % kEl
-deltaEL = 0.015;
+deltaEL = 0.01;
 alpha_L = 1.0;
 dim_stoch_exp = 2.5;
 
@@ -50,8 +50,8 @@ a = 1;
 b = 1;
 
 % Further Luminescence-related parameters
-eta = 1;                     % Quantum Efficiency
-RLUconst = 1e-5;                % RLU constant
+eta = 1;                        % Quantum Efficiency
+RLUconst = 5e-4;                % RLU constant
 
 N_Avo = 6.022e23;
 
@@ -336,7 +336,7 @@ model_updated = setinit(model_updated, 'Name', cell__name_arr);
 
 % Define ODE Solver for GreyBox Model
 model_updated.SimulationOptions.Solver = 'ode15s';
-model_updated.SimulationOptions.RelTol= 1e-3;
+model_updated.SimulationOptions.RelTol= 1e-9;
 %model_updated.SimulationOptions.MaxStep = 0.1;
 
 
@@ -460,12 +460,12 @@ model_updated.Parameters(22).Maximum = 1; %"Luciferase Degradation Rate"
 elseif RED_SYS_FLAG
 
 % Implies: DO NOT ESTIMATE INITIAL STATES
-model_updated.InitialStates(1).Fixed =true;
-model_updated.InitialStates(2).Fixed =true;
-model_updated.InitialStates(3).Fixed =true;
-model_updated.InitialStates(4).Fixed =true;
-model_updated.InitialStates(5).Fixed =true;
-model_updated.InitialStates(6).Fixed =true;
+model_updated.InitialStates(1).Fixed =true;  % XIP_int
+model_updated.InitialStates(2).Fixed =true; % ComR_f 
+model_updated.InitialStates(3).Fixed =true;  % ComR_m
+model_updated.InitialStates(4).Fixed =true;  % LuxAB
+model_updated.InitialStates(5).Fixed =true;  % SigX
+model_updated.InitialStates(6).Fixed =true;  % XIP_ext
 
 
 
@@ -496,11 +496,11 @@ model_updated.Parameters(20).Name = 'deltaEL - Luciferase Degradation Constant';
 model_updated.Parameters(21).Name = 'alphaL - luxAB Translation Efficieny';
 
 model_updated.Parameters(1).Fixed = false; %"Transfer Rate"
-model_updated.Parameters(2).Fixed = false; %"Int. XIP Degradation Constant"
-model_updated.Parameters(3).Fixed = false; %"Ext. XIP Degradation Constant"
-model_updated.Parameters(4).Fixed = false; %"Dimer Synthesis Rate Constant"
+model_updated.Parameters(2).Fixed = true; %"Int. XIP Degradation Constant"
+model_updated.Parameters(3).Fixed = true; %"Ext. XIP Degradation Constant"
+model_updated.Parameters(4).Fixed = true; %"Dimer Synthesis Rate Constant"
 model_updated.Parameters(5).Fixed = false; %"Dimer Unbinding Rate Constant"
-model_updated.Parameters(6).Fixed = false; %"comR Degradation Constant"
+model_updated.Parameters(6).Fixed = true; %"comR Degradation Constant"
 model_updated.Parameters(7).Fixed = false; %"comR-XIP-dimer Degradation Constant"
 model_updated.Parameters(8).Fixed = false; %"ComR Translation Efficiency"
 model_updated.Parameters(9).Fixed = false; %"SigX Translation Efficiency"
@@ -524,7 +524,7 @@ model_updated.Parameters(21).Fixed =  false; %'alphaL - luxAB Translation Effici
 model_updated.Parameters(1).Minimum = 1e-10; %"Transfer Rate"
 model_updated.Parameters(2).Minimum = 1e-5; %"Int. XIP Degradation Constant"
 model_updated.Parameters(3).Minimum = 1e-5; %"Ext. XIP Degradation Constant"
-model_updated.Parameters(4).Minimum = 1e-5; %"Dimer Synthesis Rate Constant"
+model_updated.Parameters(4).Minimum = 1e-20; %"Dimer Synthesis Rate Constant"
 model_updated.Parameters(5).Minimum = 1e-9; %"Dimer Unbinding Rate Constant"
 model_updated.Parameters(6).Minimum = 1e-5; %"comR Degradation Constant"
 model_updated.Parameters(7).Minimum = 1e-5; %"comR-XIP-dimer Degradation Constant"
@@ -540,7 +540,7 @@ model_updated.Parameters(15).Minimum = 1e-5; %"SigX Degradation Constant"
 model_updated.Parameters(16).Minimum = 1e-5; %"Test Volume MINUS Total Bacterial Population Volume"
 model_updated.Parameters(17).Minimum = 1; %"Bacterial Volume"
 %model_updated.Parameters(19).Minimum = 1e-5; %"Luciferase/Reductase Synthesis Rate Constant"
-model_updated.Parameters(18).Minimum = 0.001; %"Reaction Quantum Yield"
+model_updated.Parameters(18).Minimum = 0.1; %"Reaction Quantum Yield"
 model_updated.Parameters(19).Minimum =1e-10; %"RLU Constant (LAB Equipment)"
 model_updated.Parameters(20).Minimum =1e-5; %"Luciferase Degradation Rate"
 model_updated.Parameters(21).Minimum = 1e-5; %'alphaL - luxAB Translation Efficieny';
@@ -559,10 +559,10 @@ model_updated.Parameters(8).Maximum = 1; %"ComR Translation Efficiency"
 model_updated.Parameters(9).Maximum = 1; %"SigX Translation Efficiency"
 model_updated.Parameters(10).Maximum = 1; %"Basal comR Transcription Rate"
 model_updated.Parameters(11).Maximum = 100; %"comR-activated sigX Transcription Rate"
-model_updated.Parameters(12).Maximum = 1e3; %"ComR MM Constant (ComR as TF)"
+model_updated.Parameters(12).Maximum = 1e2; %"ComR MM Constant (ComR as TF)"
 %model_updated.Parameters(13).Maximum = 1; %"sigX Degradation Constant"
 model_updated.Parameters(13).Maximum = 100; %"SigX-activated comR Transcription Rate"
-model_updated.Parameters(14).Maximum = 1e3; %"SigX MM Constant (SigX as TF)"
+model_updated.Parameters(14).Maximum = 1e2; %"SigX MM Constant (SigX as TF)"
 model_updated.Parameters(15).Maximum = 1; %"SigX Degradation Constant"
 model_updated.Parameters(16).Maximum = 100; %"Test Volume MINUS Total Bacterial Population Volume"
 model_updated.Parameters(17).Maximum = 1; %"Bacterial Volume"
@@ -642,13 +642,13 @@ end
 
 % Cut Init Row 
 res_arr = res_arr(2:end,:);
-
-
-% Plot values 
-for i = 2: size(res_arr,2)
-    figure; plot(res_arr(:,1), res_arr(:,i))
-    title(num2str(i));
-end
+ 
+ 
+% % Plot values 
+% for i = 2: size(res_arr,2)
+%     figure; plot(res_arr(:,1), res_arr(:,i))
+%     title(num2str(i));
+% end
 
 
 %% Estimation
@@ -658,8 +658,8 @@ try
 opt = nlgreyestOptions;
 opt.Display = 'on';
 opt.SearchOptions.Advanced.UseParallel = true;
-opt.SearchMethod = 'fmincon';
-opt.SearchOptions.Algorithm = 'active-set';   % sqp, trust-region-reflective,interior-point                                    
+opt.SearchMethod = 'lsqnonlin';
+%opt.SearchOptions.Algorithm = 'active-set';   % sqp, trust-region-reflective,interior-point                                    
 %opt.SearchOptions.Advanced.FinDiffRelStep = 1e-1;    
 
 % Perform NL Parameter Estimation
